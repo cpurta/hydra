@@ -9,8 +9,12 @@ const options = {
   structure: {
     typegen: {
       metadata: {
-        source: 'string',
-        'blockHash?': 'string',
+        sources: [
+          {
+            source: 'string',
+            'blockHash?': 'string',
+          }
+        ]
       },
       'customTypes?': {
         lib: 'string',

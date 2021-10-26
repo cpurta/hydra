@@ -25,27 +25,29 @@ export async function extractMeta({
   const moduleEvents: Record<string, Event[]> = {}
   const moduleCalls: Record<string, Call[]> = {}
   const moduleTypes: Record<string, string[]> = {}
+  
+  for (const source of metadataSource) {
+    const metadata = await getMetadata(source)
 
-  const metadata = await getMetadata(metadataSource)
+    for (const e of events) {
+      const [module, event] = findEvent(metadata, e)
+      const name = module.name.toString()
+      modules[name] = module
+      pushToDictionary(moduleEvents, name, event)
+      pushToDictionary(moduleTypes, name, ...stripTypes(event.args))
+    }
 
-  for (const e of events) {
-    const [module, event] = findEvent(metadata, e)
-    const name = module.name.toString()
-    modules[name] = module
-    pushToDictionary(moduleEvents, name, event)
-    pushToDictionary(moduleTypes, name, ...stripTypes(event.args))
-  }
-
-  for (const c of calls) {
-    const [module, call] = findCall(metadata, c)
-    const name = module.name.toString()
-    modules[name] = module
-    pushToDictionary(moduleCalls, name, call)
-    pushToDictionary(
-      moduleTypes,
-      name,
-      ...stripTypes(call.args.map((a) => a.type.toString()))
-    )
+    for (const c of calls) {
+      const [module, call] = findCall(metadata, c)
+      const name = module.name.toString()
+      modules[name] = module
+      pushToDictionary(moduleCalls, name, call)
+      pushToDictionary(
+        moduleTypes,
+        name,
+        ...stripTypes(call.args.map((a) => a.type.toString()))
+      )
+    }
   }
 
   return Object.keys(modules).map((name) => ({

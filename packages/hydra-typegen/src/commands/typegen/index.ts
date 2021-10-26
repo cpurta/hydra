@@ -20,7 +20,7 @@ export type CustomTypes = {
 }
 
 export interface IConfig {
-  metadata: MetadataSource
+  metadata: MetadataSource[]
   events: string[]
   calls: string[]
   customTypes?: CustomTypes
@@ -32,7 +32,7 @@ export type Flags = {
   events: string | undefined
   calls: string | undefined
   metadata: string
-  blockHash: string | undefined
+  blockHashes: string | undefined
   typedefs: string | undefined
   typelib: string | undefined
   outDir: string
@@ -64,15 +64,16 @@ export default class Typegen extends Command {
     }),
     metadata: flags.string({
       char: 'm',
-      description: `Chain metadata source. \
-If starts with ws:// or wss:// the metadata is pulled by an RPC call to the provided endpoint. \
-Otherwise a relative path to a json file matching the RPC call response is expected`,
+      description: `Chain metadata sources. \
+If they start with ws:// or wss:// the metadata is pulled by an RPC call to the provided endpoint(s). \
+Otherwise a relative pathes to a json file matching the RPC call response is expected`,
       default: 'metadata.json',
     }),
-    blockHash: flags.string({
+    blockHashes: flags.string({
       char: 'h',
       description:
-        'Hash of the block from which the metadata will be fetched. Only applied if metadata is pulled via an RPC call',
+        'Hashes of the blocks from which the metadata will be fetched. Only applied if metadata is pulled via an RPC call. \
+NOTE: Each block hash will correspond to the RPC endpoint provided in the \'endpoint\' flag if provided.',
     }),
     typedefs: flags.string({
       char: 't',
@@ -144,14 +145,25 @@ types don't much the metadata definiton`,
       ? flags.calls.split(',').map((c) => c.trim())
       : []
 
+    const sources: string[] = flags.metadata
+      ? flags.metadata.split(',').map((m) => m.trim())
+      : []
+
+    const blockHashes: string[] = flags.blockHashes
+      ? flags.blockHashes.split(',').map((h) => h.trim())
+      : []
+
+    const metadataSources: MetadataSource[] = sources.map((s, i) => {
+      const h: string | undefined = blockHashes[i] ? blockHashes[i] : undefined
+      return {source: s, blockHash: h}
+    })
+      
+
     return {
       events,
       calls,
       outDir: flags.outDir,
-      metadata: {
-        source: flags.metadata,
-        blockHash: flags.blockHash,
-      },
+      metadata: metadataSources,
       strict: flags.strict,
       customTypes,
     } as IConfig
