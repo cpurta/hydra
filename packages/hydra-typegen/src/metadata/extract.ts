@@ -17,7 +17,7 @@ import { builtInClasses } from './default-types'
 const debug = require('debug')('hydra-typegen:extract')
 
 export async function extractMeta({
-  metadata: metadataSource,
+  metadata: metadataSources,
   events,
   calls,
 }: IConfig): Promise<ModuleMeta[]> {
@@ -26,7 +26,7 @@ export async function extractMeta({
   const moduleCalls: Record<string, Call[]> = {}
   const moduleTypes: Record<string, string[]> = {}
   
-  for (const source of metadataSource) {
+  for (const source of metadataSources.sources) {
     const metadata = await getMetadata(source)
 
     for (const e of events) {

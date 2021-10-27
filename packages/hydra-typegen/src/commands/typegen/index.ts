@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import Debug from 'debug'
 
-import { MetadataSource, registerCustomTypes } from '../../metadata/metadata'
+import { MetadataSources, registerCustomTypes } from '../../metadata/metadata'
 import { extractMeta } from '../../metadata'
 import {
   generateModuleTypes,
@@ -20,7 +20,7 @@ export type CustomTypes = {
 }
 
 export interface IConfig {
-  metadata: MetadataSource[]
+  metadata: MetadataSources
   events: string[]
   calls: string[]
   customTypes?: CustomTypes
@@ -153,11 +153,10 @@ types don't much the metadata definiton`,
       ? flags.blockHashes.split(',').map((h) => h.trim())
       : []
 
-    const metadataSources: MetadataSource[] = sources.map((s, i) => {
+    const metadataSources: MetadataSources = {sources: sources.map((s, i) => {
       const h: string | undefined = blockHashes[i] ? blockHashes[i] : undefined
       return {source: s, blockHash: h}
-    })
-      
+    })}
 
     return {
       events,
