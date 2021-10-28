@@ -6,10 +6,10 @@ export * from './StateKeeper'
 
 let stateKeeper: StateKeeper
 
-export async function getStateKeeper(): Promise<IStateKeeper> {
+export async function getStateKeeper(indexerEndpointURL: string): Promise<IStateKeeper> {
   if (!stateKeeper) {
     stateKeeper = new StateKeeper()
-    await stateKeeper.init()
+    await stateKeeper.init(indexerEndpointURL)
   }
   return stateKeeper
 }

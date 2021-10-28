@@ -5,10 +5,10 @@ export * from './IBlockQueue'
 
 let blockQueue: BlockQueue
 
-export async function getBlockQueue(): Promise<IBlockQueue> {
+export async function getBlockQueue(indexerEndpointURL: string): Promise<IBlockQueue> {
   if (!blockQueue) {
     blockQueue = new BlockQueue()
-    await blockQueue.init()
+    await blockQueue.init(indexerEndpointURL)
   }
   return blockQueue
 }

@@ -94,10 +94,10 @@ export class StateKeeper implements IStateKeeper {
     eventEmitter.emit(ProcessorEvents.STATE_CHANGE, this.processorState)
   }
 
-  async init(): Promise<IProcessorState> {
+  async init(indexerEndpointURL: string): Promise<IProcessorState> {
     const lastState = await loadState(conf().ID)
 
-    const processorSource = await getProcessorSource()
+    const processorSource = await getProcessorSource(indexerEndpointURL)
 
     this.indexerStatus = await processorSource.getIndexerStatus()
 

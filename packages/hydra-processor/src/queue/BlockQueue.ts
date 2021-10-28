@@ -55,11 +55,11 @@ export class BlockQueue implements IBlockQueue {
   indexerQueries!: { [key in Kind]?: Partial<IndexerQuery> }
   heightsWithHooks!: Range[]
 
-  async init(): Promise<void> {
+  async init(indexerEndpointURL: string): Promise<void> {
     info(`Waiting for the indexer head to be initialized`)
 
-    this.stateKeeper = await getStateKeeper()
-    this.dataSource = await getProcessorSource()
+    this.stateKeeper = await getStateKeeper(indexerEndpointURL)
+    this.dataSource = await getProcessorSource(indexerEndpointURL)
     this.mappingFilter = getMappingFilter(getManifest().mappings)
 
     await pWaitFor(async () => {

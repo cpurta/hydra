@@ -9,6 +9,7 @@ import { error, info } from '../util/log'
 import pWaitFor from 'p-wait-for'
 import { Server } from 'http'
 import { getHydraVersion } from '../state/version'
+import { getManifest } from './config'
 
 const debug = Debug('hydra-processor:runner')
 
@@ -19,7 +20,7 @@ const debug = Debug('hydra-processor:runner')
 // anonymous code in root file scope.
 export class ProcessorRunner {
   private connection: Connection | undefined
-  private processor: MappingsProcessor | undefined
+  private processors: MappingsProcessor[] | undefined
   private promServer: Server | undefined
 
   constructor() {
@@ -43,7 +44,10 @@ export class ProcessorRunner {
     info('Establishing a database connection')
     this.connection = await createDBConnection()
 
-    this.processor = new MappingsProcessor()
+    this.processors = []
+    for (const chain of getManifest().processor.chains) {
+      this.processors?.push(new MappingsProcessor(chain.indexerEndpointURL))
+    }
 
     try {
       const promClient = new ProcessorPromClient()
@@ -53,13 +57,16 @@ export class ProcessorRunner {
       error(`Can't start Prometheus endpoint: ${logError(e)}`)
     }
 
-    await this.processor.start()
+    await Promise.all(this.processors?.map(async (processor) => processor.start()) ?? [])
   }
 
   async shutDown(): Promise<void> {
-    if (this.processor) {
-      this.processor.stop()
-      await pWaitFor(() => (this.processor as MappingsProcessor).stopped)
+    info('Shutting down processors')
+    if (this.processors) {
+      for (const processor of this.processors) {
+        processor.stop()
+        await pWaitFor(() => (processor as MappingsProcessor).stopped)
+      }
     }
 
     if (this.connection && this.connection.isConnected) {

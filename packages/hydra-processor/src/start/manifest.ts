@@ -23,6 +23,14 @@ const manifestValidatorOptions = {
     'repository?': 'string',
     hydraVersion: 'string',
     'indexerVersionRange?': 'string?',
+    processor: {
+      chains: [
+        {
+          name: 'string',
+          indexerEndpointURL: 'string',
+        },
+      ],
+    },
     mappings: {
       mappingsModule: 'string',
       'imports?': ['string'],
@@ -137,12 +145,22 @@ export function hasEvent(handler: unknown): handler is { event: string } {
   return (handler as any).event !== undefined
 }
 
+export interface Processor {
+  chains: ProcessorChain[]
+}
+
+export interface ProcessorChain {
+  name: string
+  indexerEndpointURL: string
+}
+
 export interface ProcessorManifest {
   version: string
   hydraVersion: string
   indexerVersionRange: string
   description?: string
   repository?: string
+  processor: Processor
   mappings: MappingsDef
 }
 
@@ -163,6 +181,7 @@ export function parseManifest(manifestLoc: string): ProcessorManifest {
     indexerVersionRange?: string
     description?: string
     repository?: string
+    processor: Processor
     mappings: MappingsDefInput
   }
 
