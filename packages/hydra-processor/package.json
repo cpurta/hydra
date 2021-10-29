@@ -1,5 +1,5 @@
 {
-  "name": "@subsquid/hydra-processor",
+  "name": "@cpurta/hydra-processor",
   "version": "4.2.0-alpha.6",
   "description": "Hydra Processor CLI",
   "main": "lib/index.js",
@@ -18,7 +18,7 @@
   "oclif": {
     "commands": "./lib/commands",
     "bin": "hydra-processor",
-    "scope": "@subsquid",
+    "scope": "@cpurta",
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/errors"
