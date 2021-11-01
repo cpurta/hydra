@@ -35,13 +35,7 @@ export class StateKeeper implements IStateKeeper {
     })
 
     const stateLog = throttle(() => {
-      const syncStatus =
-        this.indexerStatus.chainHeight > 0
-          ? `${
-              this.indexerStatus.chainHeight -
-              this.processorState.lastScannedBlock
-            } blocks behind`
-          : `Connecting to the indexer...`
+      const syncStatus = this.indexerStatus ? this.indexerStatus.chainHeight > 0 ? `${this.indexerStatus.chainHeight - this.processorState.lastScannedBlock} blocks behind`: `Connecting to the indexer...` : 'Waiting for indexer status...'
       info(
         `Last block: ${this.processorState.lastScannedBlock} \t: ${syncStatus}`
       )
