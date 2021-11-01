@@ -13,11 +13,13 @@ const debug = Debug('hydra-processor:mappings-processor')
 export class MappingsProcessor {
   private _started = false
   private indexerEndpointURL: string
+  private substrateChain: string
   private eventQueue!: IBlockQueue
   private stateKeeper!: IStateKeeper
   private mappingsExecutor!: IMappingExecutor
 
-  constructor(indexerEndpointURL: string) {
+  constructor(substrateChain: string, indexerEndpointURL: string) {
+    this.substrateChain = substrateChain
     this.indexerEndpointURL = indexerEndpointURL
   }
 
@@ -26,8 +28,8 @@ export class MappingsProcessor {
     this._started = true
 
     this.mappingsExecutor = await getMappingExecutor()
-    this.eventQueue = await getBlockQueue(this.indexerEndpointURL)
-    this.stateKeeper = await getStateKeeper(this.indexerEndpointURL)
+    this.eventQueue = await getBlockQueue(this.substrateChain, this.indexerEndpointURL)
+    this.stateKeeper = await getStateKeeper(this.substrateChain, this.indexerEndpointURL)
 
     await Promise.all([this.eventQueue.start(), this.processingLoop()])
   }

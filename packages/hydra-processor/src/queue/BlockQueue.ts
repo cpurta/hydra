@@ -49,16 +49,19 @@ export class BlockQueue implements IBlockQueue {
   indexerStatus!: IndexerStatus
   eventQueue: EventData[] = []
   stateKeeper!: IStateKeeper
+  substrateChain!: string
   dataSource!: IProcessorSource
   mappingFilter!: MappingFilter
   rangeFilter!: RangeFilter
   indexerQueries!: { [key in Kind]?: Partial<IndexerQuery> }
   heightsWithHooks!: Range[]
 
-  async init(indexerEndpointURL: string): Promise<void> {
+  async init(substrateChain: string, indexerEndpointURL: string): Promise<void> {
     info(`Waiting for the indexer head to be initialized`)
 
-    this.stateKeeper = await getStateKeeper(indexerEndpointURL)
+    this.substrateChain = substrateChain
+
+    this.stateKeeper = await getStateKeeper(substrateChain, indexerEndpointURL)
     this.dataSource = await getProcessorSource(indexerEndpointURL)
     this.mappingFilter = getMappingFilter(getManifest().mappings)
 
@@ -114,7 +117,8 @@ export class BlockQueue implements IBlockQueue {
       this.indexerStatus = await this.dataSource.getIndexerStatus()
       eventEmitter.emit(
         ProcessorEvents.INDEXER_STATUS_CHANGE,
-        this.indexerStatus
+        this.indexerStatus,
+        this.substrateChain,
       )
       await delay(conf().POLL_INTERVAL_MS)
     }
