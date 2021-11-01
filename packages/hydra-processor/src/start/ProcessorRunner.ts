@@ -49,6 +49,9 @@ export class ProcessorRunner {
       this.processors?.push(new MappingsProcessor(chain.indexerEndpointURL))
     }
 
+    info(`Created ${this.processors.length} processors`)
+    info(JSON.stringify(this.processors))
+
     try {
       const promClient = new ProcessorPromClient()
       promClient.init()

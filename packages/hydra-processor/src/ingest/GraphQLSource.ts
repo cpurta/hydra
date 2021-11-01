@@ -11,6 +11,7 @@ import { getConfig as conf, getManifest } from '../start/config'
 import { IndexerStatus } from '../state'
 import { quotedJoin } from '../util/utils'
 import { IProcessorSource } from './'
+import { info } from '../util/log'
 import { IndexerQuery } from './IProcessorSource'
 import pRetry from 'p-retry'
 
@@ -49,7 +50,7 @@ export class GraphQLSource implements IProcessorSource {
   constructor(indexerEndpointURL: string) {
     const _endpoint = indexerEndpointURL
     this.indexerEndpointURL = _endpoint
-    debug(`Using Indexer API endpoint ${_endpoint}`)
+    info(`Using Indexer API endpoint ${_endpoint}`)
     this.graphClient = new GraphQLClient(_endpoint)
     this.blockCache = new FIFOCache<number, SubstrateBlock>(
       conf().BLOCK_CACHE_CAPACITY
