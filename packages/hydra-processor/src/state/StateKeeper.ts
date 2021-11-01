@@ -18,22 +18,15 @@ export class StateKeeper implements IStateKeeper {
   private processorState!: IProcessorState
   private indexerStatus!: IndexerStatus
   private processorSource!: IProcessorSource
-  private substrateChain: string 
 
-  constructor(substrateChain: string) {
+  constructor() {
     // this.indexerStatus = {
     //   head: -1,
     //   chainHeight: -1,
     // }
-    this.substrateChain = substrateChain
-
     eventEmitter.on(
       ProcessorEvents.INDEXER_STATUS_CHANGE,
-      (indexerStatus, substrateChain) => {
-        if (substrateChain === this.substrateChain) {
-          this.indexerStatus = indexerStatus
-        }
-      }
+      (indexerStatus) => (this.indexerStatus = indexerStatus)
     )
 
     const throttle = pThrottle({

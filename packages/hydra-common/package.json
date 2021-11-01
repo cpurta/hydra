@@ -1,5 +1,5 @@
 {
-  "name": "@cpurta/hydra-common",
+  "name": "@subsquid/hydra-common",
   "version": "4.2.0-alpha.6",
   "description": "Common Hydra tools",
   "main": "lib/index.js",

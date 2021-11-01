@@ -46,7 +46,7 @@ export class ProcessorRunner {
 
     this.processors = []
     for (const chain of getManifest().processor.chains) {
-      this.processors?.push(new MappingsProcessor(chain.name, chain.indexerEndpointURL))
+      this.processors?.push(new MappingsProcessor(chain.indexerEndpointURL))
     }
 
     info(`Created ${this.processors.length} processors`)
