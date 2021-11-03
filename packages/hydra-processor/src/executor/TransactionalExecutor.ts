@@ -60,6 +60,8 @@ export class TransactionalExecutor implements IMappingExecutor {
           extrinsic: event.extrinsic,
         }
 
+        debug(`Event context: ${JSON.stringify(ctx)}`)
+
         await this.mappingsLookup.call(mapping, ctx)
         i++
 
