@@ -26,7 +26,10 @@ export class StateKeeper implements IStateKeeper {
     // }
     eventEmitter.on(
       ProcessorEvents.INDEXER_STATUS_CHANGE,
-      (indexerStatus) => (this.indexerStatus = indexerStatus)
+      (indexerStatus) => {
+        debug("recieved indexer status: "+JSON.stringify(indexerStatus))
+        this.indexerStatus = indexerStatus
+      }
     )
 
     const throttle = pThrottle({

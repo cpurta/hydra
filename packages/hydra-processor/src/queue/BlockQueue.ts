@@ -111,6 +111,7 @@ export class BlockQueue implements IBlockQueue {
     // });
     // For now, simply update indexerHead regularly
     while (this._started && this._hasNext) {
+      debug("retrieving indexer status")
       this.indexerStatus = await this.dataSource.getIndexerStatus()
       eventEmitter.emit(
         ProcessorEvents.INDEXER_STATUS_CHANGE,
