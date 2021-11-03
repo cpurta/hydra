@@ -15,19 +15,21 @@ import { validateIndexerVersion } from './version'
 const debug = Debug('hydra-processor:processor-state-handler')
 
 export class StateKeeper implements IStateKeeper {
+  private chainName: string
   private processorState!: IProcessorState
   private indexerStatus!: IndexerStatus
   private processorSource!: IProcessorSource
 
-  constructor() {
+  constructor(chainName: string) {
     // this.indexerStatus = {
     //   head: -1,
     //   chainHeight: -1,
     // }
+    this.chainName = chainName
     eventEmitter.on(
       ProcessorEvents.INDEXER_STATUS_CHANGE,
       (indexerStatus) => {
-        debug("recieved indexer status: "+JSON.stringify(indexerStatus))
+        debug("recieved indexer status: "+JSON.stringify({name: this.chainName, status: indexerStatus}))
         this.indexerStatus = indexerStatus
       }
     )
@@ -41,7 +43,7 @@ export class StateKeeper implements IStateKeeper {
       if (!this.indexerStatus || !this.processorState) {
         return
       }
-      
+
       const syncStatus = this.indexerStatus.chainHeight > 0 ? `${this.indexerStatus.chainHeight - this.processorState.lastScannedBlock} blocks behind`: `Connecting to the indexer...`
       info(
         `Last block: ${this.processorState.lastScannedBlock} \t: ${syncStatus}`
