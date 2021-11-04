@@ -7,8 +7,7 @@ import { error, info } from '../util/log'
 import { BlockData, getBlockQueue, IBlockQueue } from '../queue'
 import { eventEmitter, ProcessorEvents } from '../start/processor-events'
 import { getMappingExecutor, IMappingExecutor, isTxAware } from '../executor'
-import { getManifest, getManifestMapping } from '../start/config'
-import { MappingsDef } from '../start/manifest'
+import { getManifestMapping } from '../start/config'
 const debug = Debug('hydra-processor:mappings-processor')
 
 export class MappingsProcessor {
@@ -25,7 +24,7 @@ export class MappingsProcessor {
   }
 
   async start(): Promise<void> {
-    info('Starting the processor')
+    info(`Starting the processor for ${this.chainName}`)
     this._started = true
 
     this.mappingsExecutor = await getMappingExecutor(this.chainName)
