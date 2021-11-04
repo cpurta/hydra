@@ -15,9 +15,9 @@ const debug = Debug('hydra-processor:mappings-executor')
 export class TransactionalExecutor implements IMappingExecutor {
   private mappingsLookup!: IMappingsLookup
 
-  async init(): Promise<void> {
-    info('Initializing mappings executor')
-    this.mappingsLookup = await getMappingsLookup()
+  async init(substrateChain: string): Promise<void> {
+    info(`Initializing ${substrateChain} mappings executor:`)
+    this.mappingsLookup = await getMappingsLookup(substrateChain)
   }
 
   async executeBlock(
@@ -59,8 +59,6 @@ export class TransactionalExecutor implements IMappingExecutor {
           store,
           extrinsic: event.extrinsic,
         }
-
-        debug(`Event context: ${JSON.stringify(ctx)}`)
 
         await this.mappingsLookup.call(mapping, ctx)
         i++

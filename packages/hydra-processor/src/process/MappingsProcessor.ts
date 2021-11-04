@@ -7,7 +7,7 @@ import { error, info } from '../util/log'
 import { BlockData, getBlockQueue, IBlockQueue } from '../queue'
 import { eventEmitter, ProcessorEvents } from '../start/processor-events'
 import { getMappingExecutor, IMappingExecutor, isTxAware } from '../executor'
-import { getManifest } from '../start/config'
+import { getManifest, getManifestMapping } from '../start/config'
 import { MappingsDef } from '../start/manifest'
 const debug = Debug('hydra-processor:mappings-processor')
 
@@ -28,7 +28,7 @@ export class MappingsProcessor {
     info('Starting the processor')
     this._started = true
 
-    this.mappingsExecutor = await getMappingExecutor()
+    this.mappingsExecutor = await getMappingExecutor(this.chainName)
     this.eventQueue = await getBlockQueue(this.chainName, this.indexerEndpointURL)
     this.stateKeeper = await getStateKeeper(this.chainName, this.indexerEndpointURL)
 
@@ -54,12 +54,12 @@ export class MappingsProcessor {
 
         const next = await this.eventQueue.blocksWithEvents().next()
 
-        let mapping: MappingsDef
-        for (const manifestMapping of getManifest().mappings) {
-          if (manifestMapping.substrateChain === this.chainName) {
-            mapping = manifestMapping
-          }
+        const mapping = getManifestMapping(this.chainName)
+        if (!mapping) {
+          error(`No mapping for chain ${this.chainName}`)
+          return
         }
+
         // range of heights where there might be blocks with hooks
         const hookLookupRange = {
           from: this.stateKeeper.getState().lastScannedBlock + 1,
