@@ -31,51 +31,54 @@ const manifestValidatorOptions = {
         },
       ],
     },
-    mappings: {
-      mappingsModule: 'string',
-      'imports?': ['string'],
-      'range?': {
-        'from?': 'number',
-        'to?': 'number',
-      },
-      'eventHandlers?': [
-        {
-          event: 'string',
-          handler: 'string',
-          'filter?': {
-            'height?': 'string',
-            'specVersion?': 'string',
-          },
+    mappings: [
+      {
+        substrateChain: 'string',
+        mappingsModule: 'string',
+        'imports?': ['string'],
+        'range?': {
+          'from?': 'number',
+          'to?': 'number',
         },
-      ],
-      'extrinsicHandlers?': [
-        {
-          extrinsic: 'string',
-          handler: 'string',
-          'triggerEvents?': ['string'],
-          'filter?': {
-            'height?': 'string',
-            'specVersion?': 'string',
+        'eventHandlers?': [
+          {
+            event: 'string',
+            handler: 'string',
+            'filter?': {
+              'height?': 'string',
+              'specVersion?': 'string',
+            },
           },
-        },
-      ],
-      'preBlockHooks?': [
-        {
-          handler: 'string',
-          'filter?': {
-            'height?': 'string',
+        ],
+        'extrinsicHandlers?': [
+          {
+            extrinsic: 'string',
+            handler: 'string',
+            'triggerEvents?': ['string'],
+            'filter?': {
+              'height?': 'string',
+              'specVersion?': 'string',
+            },
           },
-        },
-      ],
-      'postBlockHooks?': [
-        {
-          handler: 'string',
-          'filter?': {
-            'height?': 'string',
+        ],
+        'preBlockHooks?': [
+          {
+            handler: 'string',
+            'filter?': {
+              'height?': 'string',
+            },
           },
-        },
-      ],
-    },
+        ],
+        'postBlockHooks?': [
+          {
+            handler: 'string',
+            'filter?': {
+              'height?': 'string',
+            },
+          },
+        ],
+      }
+    ],
   },
 
   onWarning: function (error: unknown, filepath: unknown) {
@@ -92,6 +95,7 @@ interface HandlerInput {
 }
 
 interface MappingsDefInput {
+  substrateChain: string
   mappingsModule: string
   range?: string
   imports?: string[]
@@ -104,6 +108,7 @@ interface MappingsDefInput {
 }
 
 export interface MappingsDef {
+  substrateChain: string
   mappingsModule: Record<string, unknown>
   imports: string[]
   range: Range
@@ -161,7 +166,7 @@ export interface ProcessorManifest {
   description?: string
   repository?: string
   processor: Processor
-  mappings: MappingsDef
+  mappings: MappingsDef[]
 }
 
 export function parseManifest(manifestLoc: string): ProcessorManifest {
@@ -182,7 +187,7 @@ export function parseManifest(manifestLoc: string): ProcessorManifest {
     description?: string
     repository?: string
     processor: Processor
-    mappings: MappingsDefInput
+    mappings: MappingsDefInput[]
   }
 
   const { mappings, hydraVersion } = parsed
@@ -198,22 +203,25 @@ export function parseManifest(manifestLoc: string): ProcessorManifest {
   return {
     ...parsed,
     indexerVersionRange,
-    mappings: buildMappingsDef(mappings),
+    mappings: mappings.map((parsedMapping) => (buildMappingsDef(parsedMapping))),
   }
 }
 
-function validate(parsed: MappingsDefInput): void {
-  if (
-    parsed.eventHandlers === undefined &&
-    parsed.extrinsicHandlers === undefined
-  ) {
-    throw new Error(`At least one event or extrinsic handler must be defined`)
+function validate(parsed: MappingsDefInput[]): void {
+  for (const parsedMapping of parsed) {
+    if (
+      parsedMapping.eventHandlers === undefined &&
+      parsedMapping.extrinsicHandlers === undefined
+    ) {
+      throw new Error(`At least one event or extrinsic handler must be defined`)
+    }
   }
 }
 
 function buildMappingsDef(parsed: MappingsDefInput): MappingsDef {
   debug(`Parsed mappings def: ${JSON.stringify(parsed, null, 2)}`)
   const {
+    substrateChain,
     mappingsModule,
     range,
     eventHandlers,
@@ -264,6 +272,7 @@ function buildMappingsDef(parsed: MappingsDefInput): MappingsDef {
   }
 
   return {
+    substrateChain,
     mappingsModule: resolvedModule,
     imports: [mappingsModule, ...(imports || [])].map((p) => path.resolve(p)),
     range: parseRange(range),

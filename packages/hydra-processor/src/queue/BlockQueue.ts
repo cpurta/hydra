@@ -1,5 +1,5 @@
 import { getProcessorSource } from '../ingest'
-import { getConfig as conf, getManifest } from '../start/config'
+import { getConfig as conf, getManifest, getManifestMapping } from '../start/config'
 import { info } from '../util/log'
 import { uniq, last, first, union, mapValues, chunk } from 'lodash'
 import pWaitFor from 'p-wait-for'
@@ -60,7 +60,15 @@ export class BlockQueue implements IBlockQueue {
 
     this.stateKeeper = await getStateKeeper(chainName, indexerEndpointURL)
     this.dataSource = await getProcessorSource(indexerEndpointURL)
-    this.mappingFilter = getMappingFilter(getManifest().mappings)
+    for (const mapping of getManifest().mappings) {
+      if (mapping.substrateChain === chainName) {
+        this.mappingFilter = getMappingFilter(mapping)
+      }
+    }
+    
+    if (!this.mappingFilter) {
+      throw new Error(`No mapping found for chain ${chainName}`)
+    }
 
     await pWaitFor(async () => {
       this.indexerStatus = await this.dataSource.getIndexerStatus()
@@ -69,9 +77,15 @@ export class BlockQueue implements IBlockQueue {
 
     this.rangeFilter = this.getInitialRange()
 
+    const mapping = getManifestMapping(chainName)
+
+    if (!mapping) {
+      throw new Error(`No mapping found for chain ${chainName}`)
+    }
+
     this.heightsWithHooks = unionAll(
-      getManifest().mappings.preBlockHooks.map((h) => h.filter.height),
-      getManifest().mappings.postBlockHooks.map((h) => h.filter.height)
+      mapping.preBlockHooks.map((h) => h.filter.height),
+      mapping.postBlockHooks.map((h) => h.filter.height)
     )
     this.indexerQueries = prepareIndexerQueries(this.mappingFilter)
   }

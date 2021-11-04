@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { cleanEnv, str, num, bool } from 'envalid'
-import { parseManifest, ProcessorManifest } from './manifest'
+import { parseManifest, ProcessorManifest, MappingsDef } from './manifest'
 import Debug from 'debug'
 import { setWarthogEnvs } from '../db/ormconfig'
 
@@ -89,4 +89,9 @@ export function getManifest(): ProcessorManifest {
     manifest = parseManifest(getConfig().MANIFEST_PATH)
   }
   return manifest
+}
+
+export function getManifestMapping(substrateChain: string): MappingsDef | undefined {
+  const manifest = getManifest()
+  return manifest.mappings.find((m) => m.substrateChain === substrateChain)
 }

@@ -7,7 +7,7 @@ import { getProcessorSource, IProcessorSource } from '../ingest'
 import Debug from 'debug'
 import pThrottle from 'p-throttle'
 import { eventEmitter, ProcessorEvents } from '../start/processor-events'
-import { getConfig as conf, getManifest } from '../start/config'
+import { getConfig as conf, getManifest, getManifestMapping } from '../start/config'
 import { isInRange, Range, parseEventId, info, warn } from '../util'
 import { formatEventId, SubstrateEvent } from '@subsquid/hydra-common'
 import { IndexerStatus } from '.'
@@ -111,9 +111,13 @@ export class StateKeeper implements IStateKeeper {
       getManifest().indexerVersionRange
     )
 
-    const range = getManifest().mappings.range
+    const mapping = getManifestMapping(this.chainName)
+    
+    if (!mapping) {
+      throw new Error(`No mapping found for chain ${this.chainName}`)
+    }
 
-    this.processorState = initState(range, lastState)
+    this.processorState = initState(mapping.range, lastState)
     eventEmitter.emit(ProcessorEvents.STATE_CHANGE, this.processorState)
 
     return this.processorState

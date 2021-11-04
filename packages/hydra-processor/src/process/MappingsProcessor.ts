@@ -8,6 +8,7 @@ import { BlockData, getBlockQueue, IBlockQueue } from '../queue'
 import { eventEmitter, ProcessorEvents } from '../start/processor-events'
 import { getMappingExecutor, IMappingExecutor, isTxAware } from '../executor'
 import { getManifest } from '../start/config'
+import { MappingsDef } from '../start/manifest'
 const debug = Debug('hydra-processor:mappings-processor')
 
 export class MappingsProcessor {
@@ -53,12 +54,16 @@ export class MappingsProcessor {
 
         const next = await this.eventQueue.blocksWithEvents().next()
 
+        let mapping: MappingsDef
+        for (const manifestMapping of getManifest().mappings) {
+          if (manifestMapping.substrateChain === this.chainName) {
+            mapping = manifestMapping
+          }
+        }
         // range of heights where there might be blocks with hooks
         const hookLookupRange = {
           from: this.stateKeeper.getState().lastScannedBlock + 1,
-          to: next.done
-            ? getManifest().mappings.range.to
-            : next.value.block.height - 1,
+          to: next.done ? mapping.range.to : next.value.block.height - 1,
         }
 
         // process blocks with hooks that preceed the event block
