@@ -46,6 +46,7 @@ export function getMappingFilter(mappingsDef: MappingsDef): MappingFilter {
 export class BlockQueue implements IBlockQueue {
   _started = false
   _hasNext = true
+  substrateChain!: string
   indexerStatus!: IndexerStatus
   eventQueue: EventData[] = []
   stateKeeper!: IStateKeeper
@@ -58,6 +59,7 @@ export class BlockQueue implements IBlockQueue {
   async init(chainName: string, indexerEndpointURL: string): Promise<void> {
     info(`Waiting for the indexer head to be initialized`)
 
+    this.substrateChain = chainName
     this.stateKeeper = await getStateKeeper(chainName, indexerEndpointURL)
     this.dataSource = await getProcessorSource(indexerEndpointURL)
     for (const mapping of getManifest().mappings) {
@@ -129,7 +131,8 @@ export class BlockQueue implements IBlockQueue {
       this.indexerStatus = await this.dataSource.getIndexerStatus()
       eventEmitter.emit(
         ProcessorEvents.INDEXER_STATUS_CHANGE,
-        this.indexerStatus
+        this.indexerStatus,
+        this.substrateChain,
       )
       await delay(conf().POLL_INTERVAL_MS)
     }

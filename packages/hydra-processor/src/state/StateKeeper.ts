@@ -28,9 +28,11 @@ export class StateKeeper implements IStateKeeper {
     this.chainName = chainName
     eventEmitter.on(
       ProcessorEvents.INDEXER_STATUS_CHANGE,
-      (indexerStatus) => {
-        debug("recieved indexer status: "+JSON.stringify({name: this.chainName, status: indexerStatus}))
-        this.indexerStatus = indexerStatus
+      (indexerStatus, chainName) => {
+        if (chainName === this.chainName) {
+          debug("recieved indexer status: "+JSON.stringify({name: this.chainName, status: indexerStatus}))
+          this.indexerStatus = indexerStatus
+        }
       }
     )
 
