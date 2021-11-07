@@ -4,9 +4,20 @@ import { StateKeeper } from './StateKeeper'
 export * from './IStateKeeper'
 export * from './StateKeeper'
 
+let stateKeepers: Map<string, IStateKeeper> = new Map()
+
 export async function getStateKeeper(chainName: string, indexerEndpointURL: string): Promise<IStateKeeper> {
-  const stateKeeper = new StateKeeper(chainName)
-  await stateKeeper.init(indexerEndpointURL)
+  if (!stateKeepers.has(chainName)) {
+    const stateKeeper = new StateKeeper(chainName)
+    await stateKeeper.init(indexerEndpointURL)
+
+    stateKeepers.set(chainName, stateKeeper)
+  }
   
+  const stateKeeper = stateKeepers.get(chainName)
+  if (!stateKeeper) {
+    throw new Error(`State keeper for chain ${chainName} not found`)
+  }
+
   return stateKeeper
 }
