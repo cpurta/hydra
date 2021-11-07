@@ -314,14 +314,14 @@ export class BlockQueue implements IBlockQueue {
       (query) => ({ ...this.rangeFilter, ...query } as IndexerQuery)
     )
 
-    debug(`Fetching next batch`)
+    debug(`Fetching next batch for ${this.substrateChain}`)
     const events = await this.dataSource.nextBatch(queries)
 
     // collect the events object into an array with types
     const trimmed = sortAndTrim(events)
     if (conf().VERBOSE) {
       debug(
-        `Enqueuing events: ${JSON.stringify(trimmed.map((e) => e.event.id))}`
+        `Enqueuing ${this.substrateChain} events: ${JSON.stringify(trimmed.map((e) => e.event.id))}`
       )
     }
 
