@@ -74,7 +74,7 @@ export class MappingsProcessor {
 
         // now process the block with events
         if (next.done === true) {
-          info('All the blocks from the queue have been processed')
+          info(`All the blocks from the ${this.chainName} queue have been processed`)
           break
         }
 
@@ -82,17 +82,17 @@ export class MappingsProcessor {
 
         await this.processBlock(eventBlock)
       } catch (e: any) {
-        error(`Stopping the proccessor due to errors: ${logError(e)}`)
+        error(`Stopping the ${this.chainName} proccessor due to errors: ${logError(e)}`)
         this.stop()
         throw new Error(e)
       }
     }
-    info(`Terminating the processor`)
+    info(`Terminating the ${this.chainName} processor`)
   }
 
   private async processBlock(nextBlock: BlockData) {
     info(
-      `Processing block: ${nextBlock.block.id}, events count: ${nextBlock.events.length} `
+      `Processing ${this.chainName} block: ${nextBlock.block.id}, events count: ${nextBlock.events.length} `
     )
 
     await this.mappingsExecutor.executeBlock(
@@ -110,7 +110,7 @@ export class MappingsProcessor {
       eventEmitter.emit(ProcessorEvents.PROCESSED_EVENT, ctx.event)
     )
 
-    debug(`Done block ${nextBlock.block.height}`)
+    debug(`Done ${this.chainName} block ${nextBlock.block.height}`)
   }
 
   private shouldWork(): boolean {

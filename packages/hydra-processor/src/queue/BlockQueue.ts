@@ -57,7 +57,7 @@ export class BlockQueue implements IBlockQueue {
   heightsWithHooks!: Range[]
 
   async init(chainName: string, indexerEndpointURL: string): Promise<void> {
-    info(`Waiting for the indexer head to be initialized`)
+    info(`Waiting for the ${chainName} indexer head to be initialized`)
 
     this.substrateChain = chainName
     this.stateKeeper = await getStateKeeper(chainName, indexerEndpointURL)
@@ -110,7 +110,7 @@ export class BlockQueue implements IBlockQueue {
   async start(): Promise<void> {
     this._started = true
 
-    info('Starting the event queue')
+    info(`Starting the ${this.substrateChain} event queue`)
 
     await Promise.all([this.pollIndexer(), this.fill()])
   }
@@ -160,12 +160,12 @@ export class BlockQueue implements IBlockQueue {
     // FIXME: this method only produces blocks with some event.
 
     while (this._started) {
-      debug(`Sealing new block`)
+      debug(`Sealing new ${this.substrateChain} block`)
 
       let nextEventData = await this.poll()
 
       if (nextEventData === undefined) {
-        debug(`The queue is empty and all the events were fetched`)
+        debug(`The ${this.substrateChain} queue is empty and all the events were fetched`)
         return
       }
 
@@ -175,7 +175,7 @@ export class BlockQueue implements IBlockQueue {
         nextEventData.event.blockNumber
       )
 
-      debug(`Next block: ${block.id}`)
+      debug(`Next ${this.substrateChain} block: ${block.id}`)
       // wait until all the events up to blockNumber are fully fetched
       pWaitFor(() => this.rangeFilter.block.gt >= block.height)
 
@@ -189,9 +189,9 @@ export class BlockQueue implements IBlockQueue {
       }
 
       // the event is from a new block, yield the current
-      debug(`Yielding block ${block.id}`)
+      debug(`Yielding ${this.substrateChain} block ${block.id}`)
       if (conf().VERBOSE)
-        debug(`Block contents: ${JSON.stringify(block, null, 2)}`)
+        debug(`Block contents (${this.substrateChain}): ${JSON.stringify(block, null, 2)}`)
 
       yield {
         block,
@@ -223,7 +223,7 @@ export class BlockQueue implements IBlockQueue {
 
       this.eventQueue.push(...events)
 
-      debug(`Pushed ${events.length} events to the queue`)
+      debug(`Pushed ${events.length} events to the ${this.substrateChain} queue`)
 
       if (events.length > 0) {
         this.rangeFilter.id.gt = last(events)?.event.id as string
@@ -248,6 +248,7 @@ export class BlockQueue implements IBlockQueue {
 
       debug(
         `Event queue state:
+          \tSubstrate cahin: ${this.substrateChain}
           \tIndexer head: ${this.indexerStatus.head}
           \tChain head: ${this.indexerStatus.chainHeight} 
           \tQueue size: ${this.eventQueue.length}
