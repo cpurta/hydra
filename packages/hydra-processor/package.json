@@ -1,6 +1,6 @@
 {
   "name": "@cpurta/hydra-processor",
-  "version": "4.2.0-alpha.19",
+  "version": "4.2.0-alpha.20",
   "description": "Hydra Processor CLI",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

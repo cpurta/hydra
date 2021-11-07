@@ -13,10 +13,12 @@ import { TxAwareBlockContext } from './tx-aware'
 const debug = Debug('hydra-processor:mappings-executor')
 
 export class TransactionalExecutor implements IMappingExecutor {
+  private substrateChain!: string
   private mappingsLookup!: IMappingsLookup
 
   async init(substrateChain: string): Promise<void> {
     info(`Initializing ${substrateChain} mappings executor:`)
+    this.substrateChain = substrateChain
     this.mappingsLookup = await getMappingsLookup(substrateChain)
   }
 
@@ -49,7 +51,7 @@ export class TransactionalExecutor implements IMappingExecutor {
       let i = 0
       for (const mapping of mappings) {
         const { event } = blockData.events[i]
-        debug(`Processing event ${event.id}`)
+        debug(`Processing event (${this.substrateChain}) ${event.id}`)
 
         if (conf().VERBOSE) debug(`JSON: ${JSON.stringify(event, null, 2)}`)
 
@@ -63,7 +65,7 @@ export class TransactionalExecutor implements IMappingExecutor {
         await this.mappingsLookup.call(mapping, ctx)
         i++
 
-        debug(`Event ${event.id} done`)
+        debug(`Event (${this.substrateChain}) ${event.id} done`)
       }
 
       for (const hook of post) {

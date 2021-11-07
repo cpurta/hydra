@@ -43,14 +43,16 @@ query {
 `
 
 export class GraphQLSource implements IProcessorSource {
+  private substrateChain: string
   private indexerEndpointURL: string
   private graphClient: GraphQLClient
   private blockCache: FIFOCache<number, SubstrateBlock>
 
-  constructor(indexerEndpointURL: string) {
+  constructor(substrateChain: string ,indexerEndpointURL: string) {
+    this.substrateChain = substrateChain
     const _endpoint = indexerEndpointURL
     this.indexerEndpointURL = _endpoint
-    info(`Using Indexer API endpoint ${_endpoint}`)
+    info(`Using Indexer API endpoint (${this.substrateChain}): ${_endpoint}`)
     this.graphClient = new GraphQLClient(_endpoint)
     this.blockCache = new FIFOCache<number, SubstrateBlock>(
       conf().BLOCK_CACHE_CAPACITY
