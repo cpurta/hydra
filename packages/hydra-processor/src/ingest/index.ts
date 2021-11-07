@@ -16,7 +16,7 @@ export async function getProcessorSource(substrateChain: string, indexerEndpoint
 
   const eventSource = eventSources.get(substrateChain)
   if (!eventSource) {
-    throw new Error(`No event source found for chain ${substrateChain}`)
+    throw new Error(`ProcessorSource not found for chain ${substrateChain}`)
   }
   
   return eventSource

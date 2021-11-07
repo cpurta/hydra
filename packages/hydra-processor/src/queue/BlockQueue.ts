@@ -214,7 +214,7 @@ export class BlockQueue implements IBlockQueue {
       )
 
       debug(
-        `Queue size: ${this.eventQueue.length}, max capacity: ${
+        `Queue size (${this.substrateChain}): ${this.eventQueue.length}, max capacity: ${
           conf().EVENT_QUEUE_MAX_CAPACITY
         }`
       )
@@ -329,7 +329,7 @@ export class BlockQueue implements IBlockQueue {
       trimmed.map((e) => parseEventId(e.event.id).blockHeight)
     )
 
-    if (conf().VERBOSE) debug(`Requesting blocks: ${blockHeights}`)
+    if (conf().VERBOSE) debug(`Requesting ${this.substrateChain} blocks: ${blockHeights}`)
 
     // prefetch to the cache
     await this.dataSource.fetchBlocks(blockHeights)

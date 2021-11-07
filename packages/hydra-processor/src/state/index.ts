@@ -16,7 +16,7 @@ export async function getStateKeeper(chainName: string, indexerEndpointURL: stri
   
   const stateKeeper = stateKeepers.get(chainName)
   if (!stateKeeper) {
-    throw new Error(`State keeper for chain ${chainName} not found`)
+    throw new Error(`StateKeeper for chain ${chainName} not found`)
   }
 
   return stateKeeper
