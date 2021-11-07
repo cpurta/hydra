@@ -248,7 +248,7 @@ export class BlockQueue implements IBlockQueue {
 
       debug(
         `Event queue state:
-          \tSubstrate cahin: ${this.substrateChain}
+          \tSubstrate chain: ${this.substrateChain}
           \tIndexer head: ${this.indexerStatus.head}
           \tChain head: ${this.indexerStatus.chainHeight} 
           \tQueue size: ${this.eventQueue.length}

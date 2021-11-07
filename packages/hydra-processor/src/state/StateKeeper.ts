@@ -48,7 +48,7 @@ export class StateKeeper implements IStateKeeper {
 
       const syncStatus = this.indexerStatus.chainHeight > 0 ? `${this.indexerStatus.chainHeight - this.processorState.lastScannedBlock} blocks behind`: `Connecting to the indexer...`
       info(
-        `Last block: ${this.processorState.lastScannedBlock} \t: ${syncStatus}`
+        `Last ${this.chainName} block: ${this.processorState.lastScannedBlock} \t: ${syncStatus}`
       )
     })
 
