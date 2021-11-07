@@ -11,6 +11,10 @@ export class ProcessedEventsLogEntity {
   @Column()
   processor!: string
 
+  // Substrate chain name, e.g. 'kusama', 'polkadot', etc.
+  @Column()
+  substrateChain!: string
+
   // the indexed event reference
   @Column()
   @Index()

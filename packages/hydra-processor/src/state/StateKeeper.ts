@@ -100,7 +100,7 @@ export class StateKeeper implements IStateKeeper {
   }
 
   async init(indexerEndpointURL: string): Promise<IProcessorState> {
-    const lastState = await loadState(conf().ID)
+    const lastState = await loadState(conf().ID, this.chainName)
 
     const processorSource = await getProcessorSource(this.chainName, indexerEndpointURL)
 

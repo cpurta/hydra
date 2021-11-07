@@ -16,13 +16,16 @@ export async function createDBConnection(): Promise<Connection> {
  * Get last event processed by the given mappings processor
  *
  * @param processorID Name of the processor
+ * @param substrateChain Name of the substrate chain
  */
 export async function loadState(
-  processorID: string
+  processorID: string,
+  substrateChain: string
 ): Promise<ProcessedEventsLogEntity | undefined> {
   return await getRepository(ProcessedEventsLogEntity).findOne({
     where: {
       processor: processorID,
+      substrateChain: substrateChain,
     },
     order: {
       eventId: 'DESC',
@@ -37,13 +40,14 @@ export async function loadState(
  * @param processorID Name of the processor
  */
 export async function countProcessedEvents(
-  processorID: string
+  processorID: string,
+  substrateChain: string
 ): Promise<number> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { cnt } = await getRepository(ProcessedEventsLogEntity)
     .createQueryBuilder('events')
     .select('COUNT(DISTINCT(events.event_id))', 'cnt')
-    .where({ processor: processorID })
+    .where({ processor: processorID, substrateChain: substrateChain })
     .getRawOne()!
 
   debug(`Total events count ${String(cnt)}`)
