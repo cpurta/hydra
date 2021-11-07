@@ -86,6 +86,7 @@ export class StateKeeper implements IStateKeeper {
 
     const processed = new ProcessedEventsLogEntity()
     processed.processor = conf().ID
+    processed.substrateChain = this.chainName
     processed.eventId = this.processorState.lastProcessedEvent
     processed.lastScannedBlock = this.processorState.lastScannedBlock
     processed.chainHead = this.indexerStatus.chainHeight
