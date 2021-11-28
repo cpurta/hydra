@@ -7,7 +7,11 @@ import { getProcessorSource, IProcessorSource } from '../ingest'
 import Debug from 'debug'
 import pThrottle from 'p-throttle'
 import { eventEmitter, ProcessorEvents } from '../start/processor-events'
-import { getConfig as conf, getManifest, getManifestMapping } from '../start/config'
+import {
+  getConfig as conf,
+  getManifest,
+  getManifestMapping,
+} from '../start/config'
 import { isInRange, Range, parseEventId, info, warn } from '../util'
 import { formatEventId, SubstrateEvent } from '@subsquid/hydra-common'
 import { IndexerStatus } from '.'
@@ -30,7 +34,10 @@ export class StateKeeper implements IStateKeeper {
       ProcessorEvents.INDEXER_STATUS_CHANGE,
       (indexerStatus, chainName) => {
         if (chainName === this.chainName) {
-          debug("recieved indexer status: "+JSON.stringify({name: this.chainName, status: indexerStatus}))
+          debug(
+            'recieved indexer status: ' +
+              JSON.stringify({ name: this.chainName, status: indexerStatus })
+          )
           this.indexerStatus = indexerStatus
         }
       }
@@ -46,7 +53,13 @@ export class StateKeeper implements IStateKeeper {
         return
       }
 
-      const syncStatus = this.indexerStatus.chainHeight > 0 ? `${this.indexerStatus.chainHeight - this.processorState.lastScannedBlock} blocks behind`: `Connecting to the indexer...`
+      const syncStatus =
+        this.indexerStatus.chainHeight > 0
+          ? `${
+              this.indexerStatus.chainHeight -
+              this.processorState.lastScannedBlock
+            } blocks behind`
+          : `Connecting to the indexer...`
       info(
         `Last ${this.chainName} block: ${this.processorState.lastScannedBlock} \t: ${syncStatus}`
       )
@@ -103,7 +116,10 @@ export class StateKeeper implements IStateKeeper {
   async init(indexerEndpointURL: string): Promise<IProcessorState> {
     const lastState = await loadState(conf().ID, this.chainName)
 
-    const processorSource = await getProcessorSource(this.chainName, indexerEndpointURL)
+    const processorSource = await getProcessorSource(
+      this.chainName,
+      indexerEndpointURL
+    )
 
     this.indexerStatus = await processorSource.getIndexerStatus()
 
@@ -115,7 +131,7 @@ export class StateKeeper implements IStateKeeper {
     )
 
     const mapping = getManifestMapping(this.chainName)
-    
+
     if (!mapping) {
       throw new Error(`No mapping found for chain ${this.chainName}`)
     }

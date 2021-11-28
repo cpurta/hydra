@@ -28,8 +28,14 @@ export class MappingsProcessor {
     this._started = true
 
     this.mappingsExecutor = await getMappingExecutor(this.chainName)
-    this.eventQueue = await getBlockQueue(this.chainName, this.indexerEndpointURL)
-    this.stateKeeper = await getStateKeeper(this.chainName, this.indexerEndpointURL)
+    this.eventQueue = await getBlockQueue(
+      this.chainName,
+      this.indexerEndpointURL
+    )
+    this.stateKeeper = await getStateKeeper(
+      this.chainName,
+      this.indexerEndpointURL
+    )
 
     await Promise.all([this.eventQueue.start(), this.processingLoop()])
   }
@@ -74,7 +80,9 @@ export class MappingsProcessor {
 
         // now process the block with events
         if (next.done === true) {
-          info(`All the blocks from the ${this.chainName} queue have been processed`)
+          info(
+            `All the blocks from the ${this.chainName} queue have been processed`
+          )
           break
         }
 
@@ -82,7 +90,11 @@ export class MappingsProcessor {
 
         await this.processBlock(eventBlock)
       } catch (e: any) {
-        error(`Stopping the ${this.chainName} proccessor due to errors: ${logError(e)}`)
+        error(
+          `Stopping the ${this.chainName} proccessor due to errors: ${logError(
+            e
+          )}`
+        )
         this.stop()
         throw new Error(e)
       }

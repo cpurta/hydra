@@ -2,13 +2,16 @@ import { GraphQLSource } from './GraphQLSource'
 import { IProcessorSource } from './IProcessorSource'
 import pImmediate from 'p-immediate'
 
-let eventSources: Map<string, IProcessorSource> = new Map()
+const eventSources: Map<string, IProcessorSource> = new Map()
 
 export * from './IProcessorSource'
 
-export async function getProcessorSource(substrateChain: string, indexerEndpointURL: string): Promise<IProcessorSource> {
+export async function getProcessorSource(
+  substrateChain: string,
+  indexerEndpointURL: string
+): Promise<IProcessorSource> {
   if (!eventSources.has(substrateChain)) {
-  // just to make it async, do some async init here if needed
+    // just to make it async, do some async init here if needed
     await pImmediate()
     const eventSource = new GraphQLSource(substrateChain, indexerEndpointURL)
     eventSources.set(substrateChain, eventSource)
@@ -18,6 +21,6 @@ export async function getProcessorSource(substrateChain: string, indexerEndpoint
   if (!eventSource) {
     throw new Error(`ProcessorSource not found for chain ${substrateChain}`)
   }
-  
+
   return eventSource
 }

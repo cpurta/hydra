@@ -91,7 +91,9 @@ export function getManifest(): ProcessorManifest {
   return manifest
 }
 
-export function getManifestMapping(substrateChain: string): MappingsDef | undefined {
+export function getManifestMapping(
+  substrateChain: string
+): MappingsDef | undefined {
   const manifest = getManifest()
   return manifest.mappings.find((m) => m.substrateChain === substrateChain)
 }

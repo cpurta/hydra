@@ -8,25 +8,29 @@ export * from './IMappingExecutor'
 export * from './IMappingsLookup'
 export * from './tx-aware'
 
-let mappingExecutors: Map<string, IMappingExecutor> = new Map()
-let mappingsLookups: Map<string, IMappingsLookup> = new Map()
+const mappingExecutors: Map<string, IMappingExecutor> = new Map()
+const mappingsLookups: Map<string, IMappingsLookup> = new Map()
 
-export async function getMappingExecutor(substrateChain: string): Promise<IMappingExecutor> {
+export async function getMappingExecutor(
+  substrateChain: string
+): Promise<IMappingExecutor> {
   if (!mappingExecutors.has(substrateChain)) {
     const mappingExecutor = new TransactionalExecutor()
     await mappingExecutor.init(substrateChain)
     mappingExecutors.set(substrateChain, mappingExecutor)
   }
-  
+
   const mappingExecutor = mappingExecutors.get(substrateChain)
   if (!mappingExecutor) {
     throw new Error(`MappingExecutor not found for chain ${substrateChain}`)
   }
-  
+
   return mappingExecutor
 }
 
-export async function getMappingsLookup(substrateChain: string): Promise<IMappingsLookup> {
+export async function getMappingsLookup(
+  substrateChain: string
+): Promise<IMappingsLookup> {
   if (!mappingsLookups.has(substrateChain)) {
     const mapping = getManifestMapping(substrateChain)
     if (!mapping) {
@@ -41,6 +45,6 @@ export async function getMappingsLookup(substrateChain: string): Promise<IMappin
   if (!mappingsLookup) {
     throw new Error(`MappingsLookup not found for chain ${substrateChain}`)
   }
-  
+
   return mappingsLookup
 }

@@ -77,7 +77,7 @@ const manifestValidatorOptions = {
             },
           },
         ],
-      }
+      },
     ],
   },
 
@@ -203,7 +203,7 @@ export function parseManifest(manifestLoc: string): ProcessorManifest {
   return {
     ...parsed,
     indexerVersionRange,
-    mappings: mappings.map((parsedMapping) => (buildMappingsDef(parsedMapping))),
+    mappings: mappings.map((parsedMapping) => buildMappingsDef(parsedMapping)),
   }
 }
 

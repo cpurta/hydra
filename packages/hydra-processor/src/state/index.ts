@@ -4,16 +4,19 @@ import { StateKeeper } from './StateKeeper'
 export * from './IStateKeeper'
 export * from './StateKeeper'
 
-let stateKeepers: Map<string, IStateKeeper> = new Map()
+const stateKeepers: Map<string, IStateKeeper> = new Map()
 
-export async function getStateKeeper(chainName: string, indexerEndpointURL: string): Promise<IStateKeeper> {
+export async function getStateKeeper(
+  chainName: string,
+  indexerEndpointURL: string
+): Promise<IStateKeeper> {
   if (!stateKeepers.has(chainName)) {
     const stateKeeper = new StateKeeper(chainName)
     await stateKeeper.init(indexerEndpointURL)
 
     stateKeepers.set(chainName, stateKeeper)
   }
-  
+
   const stateKeeper = stateKeepers.get(chainName)
   if (!stateKeeper) {
     throw new Error(`StateKeeper for chain ${chainName} not found`)

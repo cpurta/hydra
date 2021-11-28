@@ -1,5 +1,9 @@
 import { getProcessorSource } from '../ingest'
-import { getConfig as conf, getManifest, getManifestMapping } from '../start/config'
+import {
+  getConfig as conf,
+  getManifest,
+  getManifestMapping,
+} from '../start/config'
 import { info } from '../util/log'
 import { uniq, last, first, union, mapValues, chunk } from 'lodash'
 import pWaitFor from 'p-wait-for'
@@ -67,7 +71,7 @@ export class BlockQueue implements IBlockQueue {
         this.mappingFilter = getMappingFilter(mapping)
       }
     }
-    
+
     if (!this.mappingFilter) {
       throw new Error(`No mapping found for chain ${chainName}`)
     }
@@ -132,7 +136,7 @@ export class BlockQueue implements IBlockQueue {
       eventEmitter.emit(
         ProcessorEvents.INDEXER_STATUS_CHANGE,
         this.indexerStatus,
-        this.substrateChain,
+        this.substrateChain
       )
       await delay(conf().POLL_INTERVAL_MS)
     }
@@ -165,7 +169,9 @@ export class BlockQueue implements IBlockQueue {
       let nextEventData = await this.poll()
 
       if (nextEventData === undefined) {
-        debug(`The ${this.substrateChain} queue is empty and all the events were fetched`)
+        debug(
+          `The ${this.substrateChain} queue is empty and all the events were fetched`
+        )
         return
       }
 
@@ -191,7 +197,13 @@ export class BlockQueue implements IBlockQueue {
       // the event is from a new block, yield the current
       debug(`Yielding ${this.substrateChain} block ${block.id}`)
       if (conf().VERBOSE)
-        debug(`Block contents (${this.substrateChain}): ${JSON.stringify(block, null, 2)}`)
+        debug(
+          `Block contents (${this.substrateChain}): ${JSON.stringify(
+            block,
+            null,
+            2
+          )}`
+        )
 
       yield {
         block,
@@ -214,16 +226,18 @@ export class BlockQueue implements IBlockQueue {
       )
 
       debug(
-        `Queue size (${this.substrateChain}): ${this.eventQueue.length}, max capacity: ${
-          conf().EVENT_QUEUE_MAX_CAPACITY
-        }`
+        `Queue size (${this.substrateChain}): ${
+          this.eventQueue.length
+        }, max capacity: ${conf().EVENT_QUEUE_MAX_CAPACITY}`
       )
 
       const events: EventData[] = await this.fetchNextBatch()
 
       this.eventQueue.push(...events)
 
-      debug(`Pushed ${events.length} events to the ${this.substrateChain} queue`)
+      debug(
+        `Pushed ${events.length} events to the ${this.substrateChain} queue`
+      )
 
       if (events.length > 0) {
         this.rangeFilter.id.gt = last(events)?.event.id as string
@@ -321,7 +335,9 @@ export class BlockQueue implements IBlockQueue {
     const trimmed = sortAndTrim(events)
     if (conf().VERBOSE) {
       debug(
-        `Enqueuing ${this.substrateChain} events: ${JSON.stringify(trimmed.map((e) => e.event.id))}`
+        `Enqueuing ${this.substrateChain} events: ${JSON.stringify(
+          trimmed.map((e) => e.event.id)
+        )}`
       )
     }
 
@@ -329,7 +345,8 @@ export class BlockQueue implements IBlockQueue {
       trimmed.map((e) => parseEventId(e.event.id).blockHeight)
     )
 
-    if (conf().VERBOSE) debug(`Requesting ${this.substrateChain} blocks: ${blockHeights}`)
+    if (conf().VERBOSE)
+      debug(`Requesting ${this.substrateChain} blocks: ${blockHeights}`)
 
     // prefetch to the cache
     await this.dataSource.fetchBlocks(blockHeights)

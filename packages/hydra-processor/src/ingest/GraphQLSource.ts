@@ -7,7 +7,7 @@ import {
 import Debug from 'debug'
 import { GraphQLClient } from 'graphql-request'
 import { compact } from 'lodash'
-import { getConfig as conf, getManifest } from '../start/config'
+import { getConfig as conf } from '../start/config'
 import { IndexerStatus } from '../state'
 import { quotedJoin } from '../util/utils'
 import { IProcessorSource } from './'
@@ -48,7 +48,7 @@ export class GraphQLSource implements IProcessorSource {
   private graphClient: GraphQLClient
   private blockCache: FIFOCache<number, SubstrateBlock>
 
-  constructor(substrateChain: string ,indexerEndpointURL: string) {
+  constructor(substrateChain: string, indexerEndpointURL: string) {
     this.substrateChain = substrateChain
     const _endpoint = indexerEndpointURL
     this.indexerEndpointURL = _endpoint
@@ -187,9 +187,7 @@ export class GraphQLSource implements IProcessorSource {
       retries: conf().INDEXER_CALL_RETRIES,
       onFailedAttempt: (i) =>
         debug(
-          `Failed to connect to the indexer endpoint "${
-            this.indexerEndpointURL
-          }" after ${i.attemptNumber} attempts. Retries left: ${i.retriesLeft}`
+          `Failed to connect to the indexer endpoint "${this.indexerEndpointURL}" after ${i.attemptNumber} attempts. Retries left: ${i.retriesLeft}`
         ),
     })
 
