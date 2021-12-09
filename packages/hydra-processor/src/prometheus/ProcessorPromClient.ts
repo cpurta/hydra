@@ -4,7 +4,7 @@ import { SubstrateEvent, logError } from '@subsquid/hydra-common'
 import Debug from 'debug'
 import { countProcessedEvents } from '../db'
 import { eventEmitter, ProcessorEvents } from '../start/processor-events'
-import { getConfig as conf } from '../start/config'
+import { getConfig as conf, getManifest } from '../start/config'
 
 const debug = Debug('index-builder:processor-prom-client')
 
@@ -33,6 +33,16 @@ export class ProcessorPromClient {
   protected eventQueueSize = new Gauge({
     name: 'hydra_processor_event_queue_size',
     help: 'Number of events in the queue',
+  })
+
+  protected rangeFrom = new Gauge({
+    name: 'hydra_processor_range_from',
+    help: 'Range.from',
+  })
+
+  protected rangeTo = new Gauge({
+    name: 'hydra_processor_range_to',
+    help: 'Range.to',
   })
 
   init(): void {
@@ -73,5 +83,7 @@ export class ProcessorPromClient {
   private async initValues(): Promise<void> {
     const totalEvents = await countProcessedEvents(conf().ID)
     this.processedEvents.set(totalEvents)
+    this.rangeFrom.set(getManifest().mappings.range.from)
+    this.rangeTo.set(getManifest().mappings.range.to)
   }
 }
