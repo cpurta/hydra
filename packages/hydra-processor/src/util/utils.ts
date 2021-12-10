@@ -21,6 +21,15 @@ export function parseEventId(eventId: string): {
 }
 
 /**
+ * Takes an array of items and will return a array of only distinct items
+ * found in the input array.
+ * @param arr
+ */
+export function distinctItems(arr: any[]): any[] {
+  return arr.filter((item, index) => arr.indexOf(item) === index)
+}
+
+/**
  * Takes each string in the array, puts into quotes and joins with a comma
  * [a,b,c] -> "a","b","c"
  *

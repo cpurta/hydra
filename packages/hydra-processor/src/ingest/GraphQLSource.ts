@@ -9,7 +9,7 @@ import { GraphQLClient } from 'graphql-request'
 import { compact } from 'lodash'
 import { getConfig as conf } from '../start/config'
 import { IndexerStatus } from '../state'
-import { quotedJoin } from '../util/utils'
+import { quotedJoin, distinctItems } from '../util/utils'
 import { IProcessorSource } from './'
 import { IndexerQuery } from './IProcessorSource'
 import pRetry from 'p-retry'
@@ -222,7 +222,7 @@ export function getEventsGraphQLQuery({
   const event_in = event.in || []
   const eventsFilter =
     event_in.length > 0
-      ? `name: {_in: [${quotedJoin(event_in as string[])}]},`
+      ? `name: {_in: [${quotedJoin(distinctItems(event_in as string[]))}]},`
       : ''
 
   const extrinsic_in = extrinsic ? extrinsic.in || [] : []
