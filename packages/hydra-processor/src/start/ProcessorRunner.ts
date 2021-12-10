@@ -56,7 +56,7 @@ export class ProcessorRunner {
 
     try {
       const promClient = new ProcessorPromClient()
-      promClient.init()
+      promClient.init(getManifest().processor.chains.map((c) => c.name))
       this.promServer = startPromEndpoint()
     } catch (e) {
       error(`Can't start Prometheus endpoint: ${logError(e)}`)

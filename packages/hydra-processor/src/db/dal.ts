@@ -40,13 +40,14 @@ export async function loadState(
  * @param processorID Name of the processor
  */
 export async function countProcessedEvents(
-  processorID: string
+  processorID: string,
+  substrateChain: string
 ): Promise<number> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { cnt } = await getRepository(ProcessedEventsLogEntity)
     .createQueryBuilder('events')
     .select('COUNT(DISTINCT(events.event_id))', 'cnt')
-    .where({ processor: processorID })
+    .where({ processor: processorID, substrateChain: substrateChain })
     .getRawOne()!
 
   debug(`Total events count ${String(cnt)}`)
