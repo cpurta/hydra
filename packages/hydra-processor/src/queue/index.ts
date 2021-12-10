@@ -3,12 +3,22 @@ import { IBlockQueue } from './IBlockQueue'
 
 export * from './IBlockQueue'
 
-let blockQueue: BlockQueue
+const blockQueues: Map<string, IBlockQueue> = new Map()
 
-export async function getBlockQueue(): Promise<IBlockQueue> {
-  if (!blockQueue) {
-    blockQueue = new BlockQueue()
-    await blockQueue.init()
+export async function getBlockQueue(
+  chainName: string,
+  indexerEndpointURL: string
+): Promise<IBlockQueue> {
+  if (!blockQueues.has(chainName)) {
+    const blockQueue = new BlockQueue()
+    await blockQueue.init(chainName, indexerEndpointURL)
+    blockQueues.set(chainName, blockQueue)
   }
+
+  const blockQueue = blockQueues.get(chainName)
+  if (!blockQueue) {
+    throw new Error(`BlockQueue not found for chain ${chainName}`)
+  }
+
   return blockQueue
 }

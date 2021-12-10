@@ -7,7 +7,8 @@ export class ProcessorSchema1601637366182 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "processed_events_log" (
         "id" SERIAL NOT NULL, 
-        "processor" character varying NOT NULL, 
+        "processor" character varying NOT NULL,
+        "substrate_chain" character varying NOT NULL,
         "event_id" character varying NOT NULL, 
         "last_scanned_block" integer NOT NULL, 
         "updated_at" TIMESTAMP NOT NULL DEFAULT now(), 

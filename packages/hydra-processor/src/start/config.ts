@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { cleanEnv, str, num, bool } from 'envalid'
-import { parseManifest, ProcessorManifest } from './manifest'
+import { parseManifest, ProcessorManifest, MappingsDef } from './manifest'
 import Debug from 'debug'
 import { setWarthogEnvs } from '../db/ormconfig'
 
 let conf: {
   // manifest file location
   MANIFEST_PATH: string
-  // url of the indexer to connect to
-  INDEXER_ENDPOINT_URL: string
   NAME: string
   ID: string
   // debug pattern
@@ -52,7 +50,6 @@ let conf: {
 export function configure(): void {
   const envConf = cleanEnv(process.env, {
     MANIFEST_PATH: str({ default: 'manifest.yml' }),
-    INDEXER_ENDPOINT_URL: str({ devDefault: 'http://localhost:4001' }),
     NAME: str({ default: 'Hydra-Processor' }),
     ID: str({ default: 'hydra-processor' }),
     DEBUG: str({ default: 'hydra-processor:*' }),
@@ -92,4 +89,11 @@ export function getManifest(): ProcessorManifest {
     manifest = parseManifest(getConfig().MANIFEST_PATH)
   }
   return manifest
+}
+
+export function getManifestMapping(
+  substrateChain: string
+): MappingsDef | undefined {
+  const manifest = getManifest()
+  return manifest.mappings.find((m) => m.substrateChain === substrateChain)
 }

@@ -1,6 +1,6 @@
 {
   "name": "hydra-e2e-tests",
-  "version": "4.2.0-alpha.6",
+  "version": "4.2.0-alpha.9",
   "private": "true",
   "description": "End-to-end tests for Hydra services",
   "main": "index.js",

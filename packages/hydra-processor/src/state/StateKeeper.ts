@@ -7,7 +7,11 @@ import { getProcessorSource, IProcessorSource } from '../ingest'
 import Debug from 'debug'
 import pThrottle from 'p-throttle'
 import { eventEmitter, ProcessorEvents } from '../start/processor-events'
-import { getConfig as conf, getManifest } from '../start/config'
+import {
+  getConfig as conf,
+  getManifest,
+  getManifestMapping,
+} from '../start/config'
 import { isInRange, Range, parseEventId, info, warn } from '../util'
 import { formatEventId, SubstrateEvent } from '@subsquid/hydra-common'
 import { IndexerStatus } from '.'
@@ -15,18 +19,28 @@ import { validateIndexerVersion } from './version'
 const debug = Debug('hydra-processor:processor-state-handler')
 
 export class StateKeeper implements IStateKeeper {
+  private chainName: string
   private processorState!: IProcessorState
   private indexerStatus!: IndexerStatus
   private processorSource!: IProcessorSource
 
-  constructor() {
+  constructor(chainName: string) {
     // this.indexerStatus = {
     //   head: -1,
     //   chainHeight: -1,
     // }
+    this.chainName = chainName
     eventEmitter.on(
       ProcessorEvents.INDEXER_STATUS_CHANGE,
-      (indexerStatus) => (this.indexerStatus = indexerStatus)
+      (indexerStatus, chainName) => {
+        if (chainName === this.chainName) {
+          debug(
+            'recieved indexer status: ' +
+              JSON.stringify({ name: this.chainName, status: indexerStatus })
+          )
+          this.indexerStatus = indexerStatus
+        }
+      }
     )
 
     const throttle = pThrottle({
@@ -35,6 +49,10 @@ export class StateKeeper implements IStateKeeper {
     })
 
     const stateLog = throttle(() => {
+      if (!this.indexerStatus || !this.processorState) {
+        return
+      }
+
       const syncStatus =
         this.indexerStatus.chainHeight > 0
           ? `${
@@ -43,7 +61,7 @@ export class StateKeeper implements IStateKeeper {
             } blocks behind`
           : `Connecting to the indexer...`
       info(
-        `Last block: ${this.processorState.lastScannedBlock} \t: ${syncStatus}`
+        `Last ${this.chainName} block: ${this.processorState.lastScannedBlock} \t: ${syncStatus}`
       )
     })
 
@@ -81,6 +99,7 @@ export class StateKeeper implements IStateKeeper {
 
     const processed = new ProcessedEventsLogEntity()
     processed.processor = conf().ID
+    processed.substrateChain = this.chainName
     processed.eventId = this.processorState.lastProcessedEvent
     processed.lastScannedBlock = this.processorState.lastScannedBlock
     processed.chainHead = this.indexerStatus.chainHeight
@@ -94,10 +113,13 @@ export class StateKeeper implements IStateKeeper {
     eventEmitter.emit(ProcessorEvents.STATE_CHANGE, this.processorState)
   }
 
-  async init(): Promise<IProcessorState> {
-    const lastState = await loadState(conf().ID)
+  async init(indexerEndpointURL: string): Promise<IProcessorState> {
+    const lastState = await loadState(conf().ID, this.chainName)
 
-    const processorSource = await getProcessorSource()
+    const processorSource = await getProcessorSource(
+      this.chainName,
+      indexerEndpointURL
+    )
 
     this.indexerStatus = await processorSource.getIndexerStatus()
 
@@ -108,9 +130,13 @@ export class StateKeeper implements IStateKeeper {
       getManifest().indexerVersionRange
     )
 
-    const range = getManifest().mappings.range
+    const mapping = getManifestMapping(this.chainName)
 
-    this.processorState = initState(range, lastState)
+    if (!mapping) {
+      throw new Error(`No mapping found for chain ${this.chainName}`)
+    }
+
+    this.processorState = initState(mapping.range, lastState)
     eventEmitter.emit(ProcessorEvents.STATE_CHANGE, this.processorState)
 
     return this.processorState

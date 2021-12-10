@@ -7,22 +7,35 @@ import { error, info } from '../util/log'
 import { BlockData, getBlockQueue, IBlockQueue } from '../queue'
 import { eventEmitter, ProcessorEvents } from '../start/processor-events'
 import { getMappingExecutor, IMappingExecutor, isTxAware } from '../executor'
-import { getManifest } from '../start/config'
+import { getManifestMapping } from '../start/config'
 const debug = Debug('hydra-processor:mappings-processor')
 
 export class MappingsProcessor {
   private _started = false
+  private chainName: string
+  private indexerEndpointURL: string
   private eventQueue!: IBlockQueue
   private stateKeeper!: IStateKeeper
   private mappingsExecutor!: IMappingExecutor
 
+  constructor(chainName: string, indexerEndpointURL: string) {
+    this.chainName = chainName
+    this.indexerEndpointURL = indexerEndpointURL
+  }
+
   async start(): Promise<void> {
-    info('Starting the processor')
+    info(`Starting the processor for ${this.chainName}`)
     this._started = true
 
-    this.mappingsExecutor = await getMappingExecutor()
-    this.eventQueue = await getBlockQueue()
-    this.stateKeeper = await getStateKeeper()
+    this.mappingsExecutor = await getMappingExecutor(this.chainName)
+    this.eventQueue = await getBlockQueue(
+      this.chainName,
+      this.indexerEndpointURL
+    )
+    this.stateKeeper = await getStateKeeper(
+      this.chainName,
+      this.indexerEndpointURL
+    )
 
     await Promise.all([this.eventQueue.start(), this.processingLoop()])
   }
@@ -46,12 +59,16 @@ export class MappingsProcessor {
 
         const next = await this.eventQueue.blocksWithEvents().next()
 
+        const mapping = getManifestMapping(this.chainName)
+        if (!mapping) {
+          error(`No mapping for chain ${this.chainName}`)
+          return
+        }
+
         // range of heights where there might be blocks with hooks
         const hookLookupRange = {
           from: this.stateKeeper.getState().lastScannedBlock + 1,
-          to: next.done
-            ? getManifest().mappings.range.to
-            : next.value.block.height - 1,
+          to: next.done ? mapping.range.to : next.value.block.height - 1,
         }
 
         // process blocks with hooks that preceed the event block
@@ -63,7 +80,9 @@ export class MappingsProcessor {
 
         // now process the block with events
         if (next.done === true) {
-          info('All the blocks from the queue have been processed')
+          info(
+            `All the blocks from the ${this.chainName} queue have been processed`
+          )
           break
         }
 
@@ -71,17 +90,21 @@ export class MappingsProcessor {
 
         await this.processBlock(eventBlock)
       } catch (e: any) {
-        error(`Stopping the proccessor due to errors: ${logError(e)}`)
+        error(
+          `Stopping the ${this.chainName} proccessor due to errors: ${logError(
+            e
+          )}`
+        )
         this.stop()
         throw new Error(e)
       }
     }
-    info(`Terminating the processor`)
+    info(`Terminating the ${this.chainName} processor`)
   }
 
   private async processBlock(nextBlock: BlockData) {
     info(
-      `Processing block: ${nextBlock.block.id}, events count: ${nextBlock.events.length} `
+      `Processing ${this.chainName} block: ${nextBlock.block.id}, events count: ${nextBlock.events.length} `
     )
 
     await this.mappingsExecutor.executeBlock(
@@ -99,7 +122,7 @@ export class MappingsProcessor {
       eventEmitter.emit(ProcessorEvents.PROCESSED_EVENT, ctx.event)
     )
 
-    debug(`Done block ${nextBlock.block.height}`)
+    debug(`Done ${this.chainName} block ${nextBlock.block.height}`)
   }
 
   private shouldWork(): boolean {

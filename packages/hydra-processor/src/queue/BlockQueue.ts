@@ -1,5 +1,9 @@
 import { getProcessorSource } from '../ingest'
-import { getConfig as conf, getManifest } from '../start/config'
+import {
+  getConfig as conf,
+  getManifest,
+  getManifestMapping,
+} from '../start/config'
 import { info } from '../util/log'
 import { uniq, last, first, union, mapValues, chunk } from 'lodash'
 import pWaitFor from 'p-wait-for'
@@ -46,6 +50,7 @@ export function getMappingFilter(mappingsDef: MappingsDef): MappingFilter {
 export class BlockQueue implements IBlockQueue {
   _started = false
   _hasNext = true
+  substrateChain!: string
   indexerStatus!: IndexerStatus
   eventQueue: EventData[] = []
   stateKeeper!: IStateKeeper
@@ -55,12 +60,21 @@ export class BlockQueue implements IBlockQueue {
   indexerQueries!: { [key in Kind]?: Partial<IndexerQuery> }
   heightsWithHooks!: Range[]
 
-  async init(): Promise<void> {
-    info(`Waiting for the indexer head to be initialized`)
+  async init(chainName: string, indexerEndpointURL: string): Promise<void> {
+    info(`Waiting for the ${chainName} indexer head to be initialized`)
 
-    this.stateKeeper = await getStateKeeper()
-    this.dataSource = await getProcessorSource()
-    this.mappingFilter = getMappingFilter(getManifest().mappings)
+    this.substrateChain = chainName
+    this.stateKeeper = await getStateKeeper(chainName, indexerEndpointURL)
+    this.dataSource = await getProcessorSource(chainName, indexerEndpointURL)
+    for (const mapping of getManifest().mappings) {
+      if (mapping.substrateChain === chainName) {
+        this.mappingFilter = getMappingFilter(mapping)
+      }
+    }
+
+    if (!this.mappingFilter) {
+      throw new Error(`No mapping found for chain ${chainName}`)
+    }
 
     await pWaitFor(async () => {
       this.indexerStatus = await this.dataSource.getIndexerStatus()
@@ -69,9 +83,15 @@ export class BlockQueue implements IBlockQueue {
 
     this.rangeFilter = this.getInitialRange()
 
+    const mapping = getManifestMapping(chainName)
+
+    if (!mapping) {
+      throw new Error(`No mapping found for chain ${chainName}`)
+    }
+
     this.heightsWithHooks = unionAll(
-      getManifest().mappings.preBlockHooks.map((h) => h.filter.height),
-      getManifest().mappings.postBlockHooks.map((h) => h.filter.height)
+      mapping.preBlockHooks.map((h) => h.filter.height),
+      mapping.postBlockHooks.map((h) => h.filter.height)
     )
     this.indexerQueries = prepareIndexerQueries(this.mappingFilter)
   }
@@ -94,7 +114,7 @@ export class BlockQueue implements IBlockQueue {
   async start(): Promise<void> {
     this._started = true
 
-    info('Starting the event queue')
+    info(`Starting the ${this.substrateChain} event queue`)
 
     await Promise.all([this.pollIndexer(), this.fill()])
   }
@@ -111,10 +131,12 @@ export class BlockQueue implements IBlockQueue {
     // });
     // For now, simply update indexerHead regularly
     while (this._started && this._hasNext) {
+      debug(`retrieving ${this.substrateChain} indexer status`)
       this.indexerStatus = await this.dataSource.getIndexerStatus()
       eventEmitter.emit(
         ProcessorEvents.INDEXER_STATUS_CHANGE,
-        this.indexerStatus
+        this.indexerStatus,
+        this.substrateChain
       )
       await delay(conf().POLL_INTERVAL_MS)
     }
@@ -142,12 +164,14 @@ export class BlockQueue implements IBlockQueue {
     // FIXME: this method only produces blocks with some event.
 
     while (this._started) {
-      debug(`Sealing new block`)
+      debug(`Sealing new ${this.substrateChain} block`)
 
       let nextEventData = await this.poll()
 
       if (nextEventData === undefined) {
-        debug(`The queue is empty and all the events were fetched`)
+        debug(
+          `The ${this.substrateChain} queue is empty and all the events were fetched`
+        )
         return
       }
 
@@ -157,7 +181,7 @@ export class BlockQueue implements IBlockQueue {
         nextEventData.event.blockNumber
       )
 
-      debug(`Next block: ${block.id}`)
+      debug(`Next ${this.substrateChain} block: ${block.id}`)
       // wait until all the events up to blockNumber are fully fetched
       pWaitFor(() => this.rangeFilter.block.gt >= block.height)
 
@@ -171,9 +195,15 @@ export class BlockQueue implements IBlockQueue {
       }
 
       // the event is from a new block, yield the current
-      debug(`Yielding block ${block.id}`)
+      debug(`Yielding ${this.substrateChain} block ${block.id}`)
       if (conf().VERBOSE)
-        debug(`Block contents: ${JSON.stringify(block, null, 2)}`)
+        debug(
+          `Block contents (${this.substrateChain}): ${JSON.stringify(
+            block,
+            null,
+            2
+          )}`
+        )
 
       yield {
         block,
@@ -196,16 +226,18 @@ export class BlockQueue implements IBlockQueue {
       )
 
       debug(
-        `Queue size: ${this.eventQueue.length}, max capacity: ${
-          conf().EVENT_QUEUE_MAX_CAPACITY
-        }`
+        `Queue size (${this.substrateChain}): ${
+          this.eventQueue.length
+        }, max capacity: ${conf().EVENT_QUEUE_MAX_CAPACITY}`
       )
 
       const events: EventData[] = await this.fetchNextBatch()
 
       this.eventQueue.push(...events)
 
-      debug(`Pushed ${events.length} events to the queue`)
+      debug(
+        `Pushed ${events.length} events to the ${this.substrateChain} queue`
+      )
 
       if (events.length > 0) {
         this.rangeFilter.id.gt = last(events)?.event.id as string
@@ -230,6 +262,7 @@ export class BlockQueue implements IBlockQueue {
 
       debug(
         `Event queue state:
+          \tSubstrate chain: ${this.substrateChain}
           \tIndexer head: ${this.indexerStatus.head}
           \tChain head: ${this.indexerStatus.chainHeight} 
           \tQueue size: ${this.eventQueue.length}
@@ -295,14 +328,16 @@ export class BlockQueue implements IBlockQueue {
       (query) => ({ ...this.rangeFilter, ...query } as IndexerQuery)
     )
 
-    debug(`Fetching next batch`)
+    debug(`Fetching next batch for ${this.substrateChain}`)
     const events = await this.dataSource.nextBatch(queries)
 
     // collect the events object into an array with types
     const trimmed = sortAndTrim(events)
     if (conf().VERBOSE) {
       debug(
-        `Enqueuing events: ${JSON.stringify(trimmed.map((e) => e.event.id))}`
+        `Enqueuing ${this.substrateChain} events: ${JSON.stringify(
+          trimmed.map((e) => e.event.id)
+        )}`
       )
     }
 
@@ -310,7 +345,8 @@ export class BlockQueue implements IBlockQueue {
       trimmed.map((e) => parseEventId(e.event.id).blockHeight)
     )
 
-    if (conf().VERBOSE) debug(`Requesting blocks: ${blockHeights}`)
+    if (conf().VERBOSE)
+      debug(`Requesting ${this.substrateChain} blocks: ${blockHeights}`)
 
     // prefetch to the cache
     await this.dataSource.fetchBlocks(blockHeights)

@@ -11,6 +11,7 @@ import { getConfig as conf } from '../start/config'
 import { IndexerStatus } from '../state'
 import { quotedJoin } from '../util/utils'
 import { IProcessorSource } from './'
+import { info } from '../util/log'
 import { IndexerQuery } from './IProcessorSource'
 import pRetry from 'p-retry'
 
@@ -42,12 +43,16 @@ query {
 `
 
 export class GraphQLSource implements IProcessorSource {
+  private substrateChain: string
+  private indexerEndpointURL: string
   private graphClient: GraphQLClient
   private blockCache: FIFOCache<number, SubstrateBlock>
 
-  constructor() {
-    const _endpoint = conf().INDEXER_ENDPOINT_URL
-    debug(`Using Indexer API endpoint ${_endpoint}`)
+  constructor(substrateChain: string, indexerEndpointURL: string) {
+    this.substrateChain = substrateChain
+    const _endpoint = indexerEndpointURL
+    this.indexerEndpointURL = _endpoint
+    info(`Using Indexer API endpoint (${this.substrateChain}): ${_endpoint}`)
     this.graphClient = new GraphQLClient(_endpoint)
     this.blockCache = new FIFOCache<number, SubstrateBlock>(
       conf().BLOCK_CACHE_CAPACITY
@@ -182,9 +187,7 @@ export class GraphQLSource implements IProcessorSource {
       retries: conf().INDEXER_CALL_RETRIES,
       onFailedAttempt: (i) =>
         debug(
-          `Failed to connect to the indexer endpoint "${
-            conf().INDEXER_ENDPOINT_URL
-          }" after ${i.attemptNumber} attempts. Retries left: ${i.retriesLeft}`
+          `Failed to connect to the indexer endpoint "${this.indexerEndpointURL}" after ${i.attemptNumber} attempts. Retries left: ${i.retriesLeft}`
         ),
     })
 

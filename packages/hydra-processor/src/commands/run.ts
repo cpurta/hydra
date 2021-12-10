@@ -10,9 +10,6 @@ export default class Run extends Command {
       char: 'm',
       description: 'Manifest file',
     }),
-    indexer: flags.string({
-      description: 'Indexer URL to source events',
-    }),
     env: flags.string({
       char: 'e',
       description: 'Path to a file with environment variables',
@@ -29,10 +26,6 @@ export default class Run extends Command {
     const { flags } = this.parse(Run)
 
     dotenv.config({ path: flags.env })
-
-    if (flags.indexer) {
-      process.env.INDEXER_ENDPOINT_URL = flags.indexer
-    }
 
     if (flags.manifest) {
       process.env.MANIFEST_PATH = flags.manifest
